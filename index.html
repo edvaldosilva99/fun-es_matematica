@@ -25,10 +25,11 @@
 
   body {
     font-family: var(--font);
-    min-height: 100vh;
+    min-height: 100svh;
     background: linear-gradient(135deg, #f0f4ff 0%, #ede9fe 50%, #f5f0ff 100%);
+    background-attachment: fixed;
     display: flex; align-items: center; justify-content: center;
-    padding: 24px;
+    padding: 24px 16px;
     overflow-x: hidden;
   }
 
@@ -303,11 +304,64 @@
     to   { opacity:1; transform: translateY(0) scale(1); }
   }
 
-  @media (max-width: 520px) {
-    .card { padding: 24px 18px 20px; }
-    .card-title { font-size: 21px; }
-    .choices-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .node { width: 44px; height: 44px; font-size: 14px; }
+  /* ── MOBILE FIRST RESPONSIVE ── */
+  @media (max-width: 600px) {
+    body {
+      align-items: flex-start;
+      padding: 12px 10px 24px;
+      min-height: 100svh;
+    }
+    #app { max-width: 100%; }
+
+    .card {
+      padding: 20px 16px 18px;
+      border-radius: 22px;
+    }
+    .card:hover { transform: none; }
+    .card-eyebrow { font-size: 10px; }
+    .card-title { font-size: 20px; }
+    .card-desc { font-size: 13px; margin-bottom: 16px; }
+
+    .stage-pill { font-size: 11px; padding: 5px 13px; }
+    .stage-badge { margin-bottom: 12px; }
+
+    /* Diagrams */
+    .set-wrapper { padding: 12px 10px; gap: 10px; }
+    .node { width: 42px; height: 42px; font-size: 13px; }
+    .set-label { font-size: 10px; }
+
+    /* Canvas */
+    #function-canvas { max-width: 100%; height: auto; }
+
+    /* Multi-choice: 2 cols but smaller */
+    .choices-grid { gap: 8px; }
+    .choice-card { padding: 8px 6px; border-radius: 14px; }
+    .choice-label { font-size: 11px; }
+    .choice-card canvas { width: 100% !important; height: auto !important; }
+
+    /* Buttons */
+    .btn-row { gap: 8px; margin-top: 14px; }
+    .btn { font-size: 13px; padding: 11px 18px; }
+
+    /* Victory */
+    .victory-card { padding: 30px 20px; border-radius: 22px; }
+    .victory-title { font-size: 26px; }
+    .victory-emoji { font-size: 38px; }
+    .victory-msg { font-size: 13px; }
+    .victory-seal { padding: 10px 16px; }
+    .seal-text { font-size: 13px; }
+    .victory-ribbon { font-size: 10px; padding: 5px 14px; margin-bottom: 18px; }
+    .victory-stars { font-size: 22px; }
+    .victory-instruction { font-size: 12px; }
+  }
+
+  @media (max-width: 380px) {
+    body { padding: 8px 8px 20px; }
+    .card { padding: 16px 12px 14px; border-radius: 18px; }
+    .card-title { font-size: 18px; }
+    .node { width: 36px; height: 36px; font-size: 12px; }
+    .btn { font-size: 12px; padding: 10px 14px; }
+    .choices-grid { gap: 6px; }
   }
 </style>
 </head>
@@ -809,7 +863,9 @@ function renderCanvasConstant(container, stage) {
 
   const canvas = document.createElement('canvas');
   canvas.id = 'function-canvas';
-  canvas.width = 500; canvas.height = 280;
+  canvas.width = 500; canvas.height = 260;
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
   container.appendChild(canvas);
 
   const hint = document.createElement('div');
@@ -895,6 +951,8 @@ function renderMultichoice(container, stage, buildFn) {
     card.className = 'choice-card';
     const cv = document.createElement('canvas');
     cv.width = 200; cv.height = 160;
+    cv.style.width = '100%';
+    cv.style.height = 'auto';
     g.draw(cv);
     const lbl = document.createElement('div');
     lbl.className = 'choice-label';
