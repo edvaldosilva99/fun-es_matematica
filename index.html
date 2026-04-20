@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Funções Matemáticas — Aprendizado Interativo</title>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --glass-bg: rgba(255,255,255,0.72);
+    --glass-border: rgba(255,255,255,0.9);
+    --glass-shadow: 0 8px 60px rgba(100,80,200,0.13), 0 2px 16px rgba(80,60,180,0.08);
+    --accent: #6C63FF;
+    --accent2: #a78bfa;
+    --success: #22c55e;
+    --error: #ef4444;
+    --text-primary: #1a1a2e;
+    --text-secondary: #5a5880;
+    --radius-card: 32px;
+    --radius-btn: 20px;
+    --font: -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  body {
+    font-family: var(--font);
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f0f4ff 0%, #ede9fe 50%, #f5f0ff 100%);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    overflow-x: hidden;
+  }
+
+  /* Floating orbs */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::before {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, #c4b5fd, #818cf8);
+    top: -100px; right: -100px;
+    animation: floatA 12s ease-in-out infinite;
+  }
+  body::after {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, #bfdbfe, #a5f3fc);
+    bottom: -80px; left: -80px;
+    animation: floatB 15s ease-in-out infinite;
+  }
+  @keyframes floatA { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-30px,40px)} }
+  @keyframes floatB { 0%,100%{transform:translate(0,0)} 50%{transform:translate(30px,-30px)} }
+
+  #confetti-canvas {
+    position: fixed; top:0; left:0;
+    width:100vw; height:100vh;
+    z-index: 999; pointer-events: none;
+  }
+
+  #app {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 680px;
+  }
+
+  /* HEADER BADGE */
+  .stage-badge {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 18px;
+  }
+  .stage-pill {
+    background: var(--glass-bg);
+    border: 1.5px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 50px;
+    padding: 6px 18px;
+    font-size: 13px; font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+  .stage-progress {
+    flex: 1; height: 6px;
+    background: rgba(108,99,255,0.12);
+    border-radius: 99px; overflow: hidden;
+  }
+  .stage-progress-fill {
+    height: 100%; background: linear-gradient(90deg, #6C63FF, #a78bfa);
+    border-radius: 99px;
+    transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  /* MAIN CARD */
+  .card {
+    background: var(--glass-bg);
+    border: 1.5px solid var(--glass-border);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: var(--radius-card);
+    box-shadow: var(--glass-shadow);
+    padding: 36px 36px 28px;
+    transition: transform 0.3s ease;
+  }
+  .card:hover { transform: translateY(-2px); }
+
+  .card-header { margin-bottom: 6px; }
+  .card-eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 8px;
+  }
+  .card-title {
+    font-size: 26px; font-weight: 700; color: var(--text-primary);
+    line-height: 1.2; margin-bottom: 10px;
+  }
+  .card-desc {
+    font-size: 15px; color: var(--text-secondary);
+    line-height: 1.55; margin-bottom: 24px;
+  }
+
+  /* FEEDBACK */
+  .feedback {
+    min-height: 28px;
+    font-size: 15px; font-weight: 600;
+    text-align: center; margin-bottom: 16px;
+    transition: all 0.3s ease;
+    opacity: 0; transform: translateY(4px);
+  }
+  .feedback.show { opacity: 1; transform: translateY(0); }
+  .feedback.success { color: var(--success); }
+  .feedback.error { color: var(--error); }
+
+  /* BUTTONS */
+  .btn-row { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
+
+  .btn {
+    border: none; cursor: pointer; font-family: var(--font);
+    font-size: 15px; font-weight: 600;
+    padding: 12px 28px; border-radius: var(--radius-btn);
+    transition: all 0.2s ease; letter-spacing: 0.01em;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #6C63FF, #a78bfa);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(108,99,255,0.35);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 26px rgba(108,99,255,0.45); }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .btn-secondary {
+    background: rgba(108,99,255,0.1);
+    color: var(--accent);
+    border: 1.5px solid rgba(108,99,255,0.25);
+  }
+  .btn-secondary:hover { background: rgba(108,99,255,0.18); }
+
+  /* ========== DIAGRAM (Sets) ========== */
+  .diagram-container {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; position: relative; width: 100%;
+  }
+  .diagram-container svg.connector-svg {
+    position: absolute; top:0; left:0;
+    width:100%; height:100%;
+    pointer-events: none; z-index: 2;
+    overflow: visible;
+  }
+
+  .set-column {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 16px;
+    z-index: 3; position: relative;
+  }
+  .set-label {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--accent2); margin-bottom: 4px;
+  }
+  .set-wrapper {
+    background: rgba(108,99,255,0.06);
+    border: 2px dashed rgba(108,99,255,0.25);
+    border-radius: 20px; padding: 20px 18px;
+    display: flex; flex-direction: column; gap: 14px; align-items: center;
+  }
+
+  .node {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    border: 2.5px solid rgba(108,99,255,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px; color: var(--text-primary);
+    cursor: pointer; position: relative; z-index: 4;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 12px rgba(108,99,255,0.1);
+    user-select: none;
+  }
+  .node:hover { border-color: var(--accent); transform: scale(1.08); box-shadow: 0 4px 18px rgba(108,99,255,0.25); }
+  .node.selected { background: linear-gradient(135deg,#6C63FF,#a78bfa); color:#fff; border-color: #6C63FF; transform: scale(1.1); }
+  .node.connected-from { background: rgba(108,99,255,0.15); border-color: var(--accent); }
+  .node.connected-to { background: rgba(34,197,94,0.15); border-color: var(--success); }
+  .node.target { cursor: pointer; }
+
+  .set-spacer { flex: 1; min-width: 80px; }
+
+  /* ========== CANVAS STAGE ========== */
+  #function-canvas {
+    border-radius: 18px;
+    border: 1.5px solid rgba(108,99,255,0.2);
+    background: rgba(255,255,255,0.5);
+    cursor: crosshair;
+    display: block; margin: 0 auto;
+    width: 100%; max-width: 500px;
+  }
+
+  /* ========== MULTI CHOICE ========== */
+  .choices-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px; margin-top: 4px;
+  }
+  .choice-card {
+    background: rgba(255,255,255,0.6);
+    border: 2px solid rgba(108,99,255,0.18);
+    border-radius: 18px; padding: 10px;
+    cursor: pointer; transition: all 0.2s ease;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .choice-card:hover { border-color: var(--accent); background: rgba(108,99,255,0.07); transform: translateY(-2px); }
+  .choice-card.correct { border-color: var(--success); background: rgba(34,197,94,0.1); }
+  .choice-card.wrong { border-color: var(--error); background: rgba(239,68,68,0.07); }
+  .choice-card canvas { border-radius: 10px; }
+  .choice-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+
+  /* ========== VICTORY CARD ========== */
+  .victory-card {
+    background: linear-gradient(135deg, #1a1a3e 0%, #2d2060 100%);
+    border-radius: var(--radius-card);
+    padding: 48px 40px;
+    text-align: center;
+    position: relative; overflow: hidden;
+    box-shadow: 0 20px 80px rgba(108,99,255,0.4);
+  }
+  .victory-card::before {
+    content:'';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px,
+      transparent 1px, transparent 16px
+    );
+  }
+  .victory-ribbon {
+    display: inline-block;
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    color: #1a0a00;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 6px 22px; border-radius: 50px;
+    margin-bottom: 28px;
+    box-shadow: 0 4px 20px rgba(245,158,11,0.4);
+  }
+  .victory-title {
+    font-size: 38px; font-weight: 800;
+    color: #fff; margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .victory-emoji { font-size: 52px; margin-bottom: 16px; display: block; }
+  .victory-msg {
+    font-size: 16px; color: rgba(255,255,255,0.75);
+    line-height: 1.6; max-width: 420px; margin: 0 auto 32px;
+  }
+  .victory-seal {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(34,197,94,0.15);
+    border: 2px solid rgba(34,197,94,0.5);
+    border-radius: 14px; padding: 14px 28px;
+    margin-bottom: 28px;
+  }
+  .seal-dot { width:10px; height:10px; border-radius:50%; background: var(--success); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.4)} }
+  .seal-text { font-size: 15px; font-weight: 700; color: #4ade80; letter-spacing: 0.06em; }
+  .victory-instruction {
+    font-size: 14px; color: rgba(255,255,255,0.5);
+    font-style: italic; line-height: 1.5;
+  }
+  .victory-stars {
+    display: flex; justify-content: center; gap: 8px; margin-bottom: 24px;
+    font-size: 28px;
+  }
+  .victory-divider {
+    border: none; border-top: 1px solid rgba(255,255,255,0.1);
+    margin: 24px 0;
+  }
+
+  /* SLIDE ANIMATION */
+  .stage-enter { animation: stageIn 0.45s cubic-bezier(0.34,1.2,0.64,1) both; }
+  @keyframes stageIn {
+    from { opacity:0; transform: translateY(30px) scale(0.97); }
+    to   { opacity:1; transform: translateY(0) scale(1); }
+  }
+
+  @media (max-width: 520px) {
+    .card { padding: 24px 18px 20px; }
+    .card-title { font-size: 21px; }
+    .choices-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .node { width: 44px; height: 44px; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+// ─── CONFETTI SETUP (zero dependencies) ───────────────────────────
+(function(){
+  const cv = document.createElement('canvas');
+  cv.style.cssText='position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999;pointer-events:none';
+  document.body.appendChild(cv);
+  function resize(){ cv.width=innerWidth; cv.height=innerHeight; }
+  resize(); window.addEventListener('resize',resize);
+  let parts=[];
+  window.celebrate=function(opts){
+    opts=opts||{};
+    const colors=opts.colors||['#6C63FF','#a78bfa','#fbbf24','#4ade80','#60a5fa','#f472b6','#fb923c'];
+    const n=opts.particleCount||100;
+    const ox=(opts.origin&&opts.origin.x!=null?opts.origin.x:0.5)*cv.width;
+    const oy=(opts.origin&&opts.origin.y!=null?opts.origin.y:0.45)*cv.height;
+    const spread=((opts.spread||70)*Math.PI/180);
+    const ang=((opts.angle!=null?opts.angle:90)*Math.PI/180);
+    for(let i=0;i<n;i++){
+      const a=-ang+(Math.random()-.5)*spread;
+      const v=5+Math.random()*9;
+      parts.push({x:ox,y:oy,vx:Math.cos(a)*v,vy:-Math.abs(Math.sin(a)*v),
+        color:colors[i%colors.length],
+        w:5+Math.random()*7,h:3+Math.random()*5,
+        rot:Math.random()*6.28,rv:(Math.random()-.5)*.25,
+        alpha:1,fade:.010+Math.random()*.010,
+        g:.32,circle:Math.random()>.5});
+    }
+    if(!window._cRaf) loop();
+  };
+  window.bigCelebrate=function(){
+    const end=Date.now()+3000;
+    (function burst(){
+      celebrate({particleCount:8,angle:60,spread:50,origin:{x:0,y:.6}});
+      celebrate({particleCount:8,angle:120,spread:50,origin:{x:1,y:.6}});
+      if(Date.now()<end) setTimeout(burst,160);
+    })();
+  };
+  function loop(){
+    window._cRaf=requestAnimationFrame(loop);
+    const ctx=cv.getContext('2d');
+    ctx.clearRect(0,0,cv.width,cv.height);
+    parts=parts.filter(p=>p.alpha>.01);
+    for(const p of parts){
+      p.x+=p.vx; p.y+=p.vy; p.vy+=p.g; p.vx*=.99;
+      p.rot+=p.rv; p.alpha-=p.fade;
+      ctx.save(); ctx.globalAlpha=Math.max(0,p.alpha);
+      ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle=p.color;
+      if(p.circle){ctx.beginPath();ctx.ellipse(0,0,p.w/2,p.h/2,0,0,6.28);ctx.fill();}
+      else ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    }
+    if(!parts.length){cancelAnimationFrame(window._cRaf);window._cRaf=null;}
+  }
+})();
+
+// ─── STAGE DEFINITIONS ────────────────────────────────────────────
+const stages = [
+  {
+    id: 'injetiva',
+    eyebrow: 'Nível 1 — Diagrama de Conjuntos',
+    title: 'Injetividade',
+    desc: 'Uma função é injetiva quando elementos diferentes do domínio sempre geram imagens diferentes. Conecte cada elemento da esquerda a um elemento da direita sem repetir destinos.',
+    type: 'diagram',
+    domainItems: ['1','2','3'],
+    codomainItems: ['A','B','C','D'],
+    validRule: 'injective',
+    hint: 'Cada seta deve apontar para um destino diferente!',
+  },
+  {
+    id: 'sobrejetiva',
+    eyebrow: 'Nível 2 — Diagrama de Conjuntos',
+    title: 'Sobrejetividade',
+    desc: 'Uma função é sobrejetiva quando todo elemento do contradomínio é imagem de pelo menos um elemento do domínio. Conecte para cobrir todos os destinos.',
+    type: 'diagram',
+    domainItems: ['1','2','3','4'],
+    codomainItems: ['X','Y','Z'],
+    validRule: 'surjective',
+    hint: 'Todos os elementos do lado direito devem receber ao menos uma seta!',
+  },
+  {
+    id: 'bijetiva',
+    eyebrow: 'Nível 3 — Diagrama de Conjuntos',
+    title: 'Bijetividade',
+    desc: 'Uma função bijetiva é ao mesmo tempo injetiva e sobrejetiva — um match perfeito 1 para 1 entre domínio e contradomínio.',
+    type: 'diagram',
+    domainItems: ['α','β','γ'],
+    codomainItems: ['●','▲','■'],
+    validRule: 'bijective',
+    hint: 'Match perfeito: cada elemento se conecta a exatamente um, sem sobras!',
+  },
+  {
+    id: 'constante',
+    eyebrow: 'Nível 4 — Canvas Interativo',
+    title: 'Função Constante',
+    desc: 'Uma função constante f(x) = k tem o mesmo valor para qualquer entrada. Clique em dois pontos com a mesma coordenada Y para desenhar a reta horizontal.',
+    type: 'canvas-constant',
+    hint: 'Clique em dois pontos na mesma altura (mesmo Y)!',
+  },
+  {
+    id: 'afim',
+    eyebrow: 'Nível 5 — Múltipla Escolha',
+    title: 'Função Afim Crescente',
+    desc: 'Uma função afim tem a forma f(x) = ax + b. Quando a > 0, ela é crescente. Identifique o gráfico que representa uma função afim crescente.',
+    type: 'multichoice-afim',
+    hint: 'A reta deve subir da esquerda para a direita (inclinação positiva).',
+    correctIndex: 0,
+  },
+  {
+    id: 'par',
+    eyebrow: 'Nível 6 — Múltipla Escolha',
+    title: 'Simetria: Função Par',
+    desc: 'Uma função é par quando f(-x) = f(x). Seu gráfico é simétrico em relação ao eixo Y. Identifique qual gráfico possui esta simetria.',
+    type: 'multichoice-par',
+    hint: 'O gráfico se espelha no eixo vertical (eixo Y).',
+    correctIndex: 1,
+  },
+  {
+    id: 'impar',
+    eyebrow: 'Nível 7 — Múltipla Escolha',
+    title: 'Simetria: Função Ímpar',
+    desc: 'Uma função é ímpar quando f(-x) = -f(x). Seu gráfico tem simetria rotacional em relação à origem. Identifique o gráfico correto.',
+    type: 'multichoice-impar',
+    hint: 'Gire o gráfico 180° em torno da origem — ele deve parecer igual!',
+    correctIndex: 2,
+  },
+  {
+    id: 'inversa',
+    eyebrow: 'Nível 8 — Desafio Final 🏆',
+    title: 'Função Inversa',
+    desc: 'A função inversa "desfaz" a função original. Se f(2) = 10, então f⁻¹(10) = 2. Faça as conexões inversas corretamente!',
+    type: 'diagram-inverse',
+    forwardMap: [['2','10'],['3','15'],['4','20']],
+    hint: 'Conecte da direita para a esquerda — desfaça o caminho original!',
+  },
+];
+
+// ─── APP STATE ─────────────────────────────────────────────────────
+let currentStage = 0;
+let stageState = {};
+
+// ─── MAIN RENDER ──────────────────────────────────────────────────
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  if (currentStage >= stages.length) {
+    renderVictory(app);
+    return;
+  }
+
+  const stage = stages[currentStage];
+  stageState = {};
+
+  // Progress header
+  const header = document.createElement('div');
+  header.className = 'stage-badge';
+  const pct = ((currentStage) / stages.length * 100).toFixed(0);
+  header.innerHTML = `
+    <div class="stage-pill">Stage ${currentStage+1}/${stages.length}</div>
+    <div class="stage-progress"><div class="stage-progress-fill" style="width:${pct}%"></div></div>
+  `;
+  app.appendChild(header);
+
+  // Card
+  const card = document.createElement('div');
+  card.className = 'card stage-enter';
+  card.innerHTML = `
+    <div class="card-header">
+      <div class="card-eyebrow">${stage.eyebrow}</div>
+      <div class="card-title">${stage.title}</div>
+      <div class="card-desc">${stage.desc}</div>
+    </div>
+    <div id="stage-content"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="checkAnswer()">Verificar ✓</button>
+      <button class="btn btn-primary" id="btn-next" disabled onclick="nextStage()">Próximo →</button>
+    </div>
+  `;
+  app.appendChild(card);
+
+  const content = card.querySelector('#stage-content');
+
+  switch (stage.type) {
+    case 'diagram': renderDiagram(content, stage); break;
+    case 'canvas-constant': renderCanvasConstant(content, stage); break;
+    case 'multichoice-afim': renderMultichoice(content, stage, buildAfimGraphs); break;
+    case 'multichoice-par': renderMultichoice(content, stage, buildParGraphs); break;
+    case 'multichoice-impar': renderMultichoice(content, stage, buildImparGraphs); break;
+    case 'diagram-inverse': renderDiagramInverse(content, stage); break;
+  }
+}
+
+// ─── FEEDBACK UTILS ───────────────────────────────────────────────
+function showFeedback(msg, type) {
+  const el = document.getElementById('feedback');
+  el.className = `feedback ${type} show`;
+  el.textContent = msg;
+}
+function enableNext() {
+  document.getElementById('btn-next').disabled = false;
+}
+
+// ─── DIAGRAM (Sets) ───────────────────────────────────────────────
+function renderDiagram(container, stage) {
+  stageState.connections = []; // [{from, to}]
+  stageState.selectedFrom = null;
+
+  const wrap = document.createElement('div');
+  wrap.style.position = 'relative';
+  wrap.style.padding = '10px 0';
+
+  const diag = document.createElement('div');
+  diag.className = 'diagram-container';
+  diag.id = 'diag-wrap';
+  diag.style.minHeight = '200px';
+  diag.style.position = 'relative';
+
+  // Left column
+  const leftCol = document.createElement('div');
+  leftCol.className = 'set-column';
+  const leftLabel = document.createElement('div');
+  leftLabel.className = 'set-label';
+  leftLabel.textContent = 'Domínio';
+  const leftSet = document.createElement('div');
+  leftSet.className = 'set-wrapper';
+
+  stage.domainItems.forEach((item, i) => {
+    const node = document.createElement('div');
+    node.className = 'node';
+    node.textContent = item;
+    node.id = `from-${i}`;
+    node.dataset.role = 'from';
+    node.dataset.idx = i;
+    node.addEventListener('click', () => handleDiagClick('from', i, item, node));
+    leftSet.appendChild(node);
+  });
+  leftCol.appendChild(leftLabel);
+  leftCol.appendChild(leftSet);
+
+  // Right column
+  const rightCol = document.createElement('div');
+  rightCol.className = 'set-column';
+  const rightLabel = document.createElement('div');
+  rightLabel.className = 'set-label';
+  rightLabel.textContent = 'Contradomínio';
+  const rightSet = document.createElement('div');
+  rightSet.className = 'set-wrapper';
+
+  stage.codomainItems.forEach((item, i) => {
+    const node = document.createElement('div');
+    node.className = 'node target';
+    node.textContent = item;
+    node.id = `to-${i}`;
+    node.dataset.role = 'to';
+    node.dataset.idx = i;
+    node.addEventListener('click', () => handleDiagClick('to', i, item, node));
+    rightSet.appendChild(node);
+  });
+  rightCol.appendChild(rightLabel);
+  rightCol.appendChild(rightSet);
+
+  // SVG overlay handled globally by redrawConnectors (connector-svg-overlay)
+
+  const spacer = document.createElement('div');
+  spacer.style.flex = '1';
+  spacer.style.minWidth = '60px';
+
+  diag.appendChild(leftCol);
+  diag.appendChild(spacer);
+  diag.appendChild(rightCol);
+  // SVG overlay is now a fixed full-page element (see redrawConnectors)
+  // diag.appendChild(svg); -- removed, handled by redrawConnectors
+
+  // Reset button
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'btn btn-secondary';
+  resetBtn.style.marginTop = '14px';
+  resetBtn.style.fontSize = '13px';
+  resetBtn.style.padding = '8px 18px';
+  resetBtn.textContent = '↩ Limpar conexões';
+  resetBtn.onclick = () => { stageState.connections = []; stageState.selectedFrom = null; clearConnectorOverlay(); updateNodeStyles(stage); };
+
+  wrap.appendChild(diag);
+  wrap.appendChild(resetBtn);
+  container.appendChild(wrap);
+}
+
+function handleDiagClick(role, idx, val, node) {
+  const stage = stages[currentStage];
+  if (role === 'from') {
+    stageState.selectedFrom = { idx, val };
+    updateNodeStyles(stage);
+    document.getElementById(`from-${idx}`).classList.add('selected');
+  } else if (role === 'to') {
+    if (stageState.selectedFrom === null) return;
+    const from = stageState.selectedFrom;
+    // Remove existing connection from this source
+    stageState.connections = stageState.connections.filter(c => c.fromIdx !== from.idx);
+    stageState.connections.push({ fromIdx: from.idx, fromVal: from.val, toIdx: idx, toVal: val });
+    stageState.selectedFrom = null;
+    updateNodeStyles(stage);
+    requestAnimationFrame(() => redrawConnectors(stage));
+  }
+}
+
+function updateNodeStyles(stage) {
+  stage.domainItems.forEach((_, i) => {
+    const el = document.getElementById(`from-${i}`);
+    if (!el) return;
+    el.className = 'node';
+    if (stageState.selectedFrom && stageState.selectedFrom.idx === i) el.classList.add('selected');
+    else if (stageState.connections.find(c => c.fromIdx === i)) el.classList.add('connected-from');
+  });
+  stage.codomainItems.forEach((_, i) => {
+    const el = document.getElementById(`to-${i}`);
+    if (!el) return;
+    el.className = 'node target';
+    if (stageState.connections.find(c => c.toIdx === i)) el.classList.add('connected-to');
+  });
+}
+
+function redrawConnectors(stage) {
+  // Use a fixed full-viewport SVG so coordinates never shift regardless of scroll/layout
+  let svg = document.getElementById('connector-svg-overlay');
+  if (!svg) {
+    svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.id = 'connector-svg-overlay';
+    svg.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:10;overflow:visible';
+    document.body.appendChild(svg);
+  }
+  svg.innerHTML = '';
+
+  stageState.connections.forEach(conn => {
+    const fromEl = document.getElementById(`from-${conn.fromIdx}`);
+    const toEl = document.getElementById(`to-${conn.toIdx}`);
+    if (!fromEl || !toEl) return;
+    const fr = fromEl.getBoundingClientRect();
+    const tr = toEl.getBoundingClientRect();
+    // Fixed viewport coords — no offset math needed
+    const x1 = fr.right;
+    const y1 = fr.top + fr.height / 2;
+    const x2 = tr.left;
+    const y2 = tr.top + tr.height / 2;
+    const cx = (x1 + x2) / 2;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', `M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`);
+    path.setAttribute('stroke','#6C63FF');
+    path.setAttribute('stroke-width','2.5');
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke-linecap','round');
+    path.setAttribute('opacity','0.8');
+
+    const arrow = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    const angle = Math.atan2(y2 - y1, x2 - cx);
+    const as = 8;
+    const p1x = x2 - as*Math.cos(angle-0.4), p1y = y2 - as*Math.sin(angle-0.4);
+    const p2x = x2 - as*Math.cos(angle+0.4), p2y = y2 - as*Math.sin(angle+0.4);
+    arrow.setAttribute('points',`${x2},${y2} ${p1x},${p1y} ${p2x},${p2y}`);
+    arrow.setAttribute('fill','#6C63FF');
+    arrow.setAttribute('opacity','0.9');
+
+    svg.appendChild(path);
+    svg.appendChild(arrow);
+  });
+}
+
+// Clear overlay when navigating stages
+function clearConnectorOverlay() {
+  const svg = document.getElementById('connector-svg-overlay');
+  if (svg) svg.innerHTML = '';
+}
+
+// ─── DIAGRAM INVERSE ──────────────────────────────────────────────
+function renderDiagramInverse(container, stage) {
+  // Forward: 2→10, 3→15, 4→20 shown; user must connect right→left (inverse)
+  stageState.connections = [];
+  stageState.selectedFrom = null;
+
+  const leftItems = stage.forwardMap.map(p => p[1]); // 10,15,20 (codomain becomes domain for inverse)
+  const rightItems = stage.forwardMap.map(p => p[0]); // 2,3,4
+
+  // Show forward mapping as info
+  const infoDiv = document.createElement('div');
+  infoDiv.style.cssText = 'margin-bottom:14px;font-size:13px;color:var(--text-secondary);text-align:center;';
+  infoDiv.innerHTML = `<b>Função original:</b> ${stage.forwardMap.map(p=>`${p[0]}→${p[1]}`).join('  |  ')}`;
+  container.appendChild(infoDiv);
+
+  const wrap = document.createElement('div');
+  wrap.style.position = 'relative';
+
+  const diag = document.createElement('div');
+  diag.className = 'diagram-container';
+  diag.id = 'diag-wrap';
+  diag.style.minHeight = '200px';
+  diag.style.position = 'relative';
+
+  const leftCol = document.createElement('div');
+  leftCol.className = 'set-column';
+  const ll = document.createElement('div');
+  ll.className = 'set-label';
+  ll.textContent = 'Imagem (f)';
+  const leftSet = document.createElement('div');
+  leftSet.className = 'set-wrapper';
+
+  leftItems.forEach((item, i) => {
+    const node = document.createElement('div');
+    node.className = 'node';
+    node.textContent = item;
+    node.id = `from-${i}`;
+    node.addEventListener('click', () => {
+      stageState.selectedFrom = { idx: i, val: item };
+      updateNodeStylesInv(leftItems, rightItems);
+      document.getElementById(`from-${i}`).classList.add('selected');
+    });
+    leftSet.appendChild(node);
+  });
+  leftCol.appendChild(ll); leftCol.appendChild(leftSet);
+
+  const rightCol = document.createElement('div');
+  rightCol.className = 'set-column';
+  const rl = document.createElement('div');
+  rl.className = 'set-label';
+  rl.textContent = 'Domínio (f⁻¹)';
+  const rightSet = document.createElement('div');
+  rightSet.className = 'set-wrapper';
+
+  rightItems.forEach((item, i) => {
+    const node = document.createElement('div');
+    node.className = 'node target';
+    node.textContent = item;
+    node.id = `to-${i}`;
+    node.addEventListener('click', () => {
+      if (stageState.selectedFrom === null) return;
+      const from = stageState.selectedFrom;
+      stageState.connections = stageState.connections.filter(c => c.fromIdx !== from.idx);
+      stageState.connections.push({ fromIdx: from.idx, fromVal: from.val, toIdx: i, toVal: item });
+      stageState.selectedFrom = null;
+      updateNodeStylesInv(leftItems, rightItems);
+      redrawConnectors({ domainItems: leftItems, codomainItems: rightItems });
+    });
+    rightSet.appendChild(node);
+  });
+  rightCol.appendChild(rl); rightCol.appendChild(rightSet);
+
+  diag.appendChild(leftCol);
+  const sp = document.createElement('div'); sp.style.flex='1'; sp.style.minWidth='60px';
+  diag.appendChild(sp);
+  diag.appendChild(rightCol);
+  // SVG overlay handled globally by redrawConnectors (connector-svg-overlay)
+
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'btn btn-secondary';
+  resetBtn.style.cssText = 'margin-top:14px;font-size:13px;padding:8px 18px;';
+  resetBtn.textContent = '↩ Limpar';
+  resetBtn.onclick = () => {
+    stageState.connections = []; stageState.selectedFrom = null;
+    updateNodeStylesInv(leftItems, rightItems);
+    clearConnectorOverlay();
+  };
+
+  wrap.appendChild(diag); wrap.appendChild(resetBtn);
+  container.appendChild(wrap);
+
+  stageState._leftItems = leftItems;
+  stageState._rightItems = rightItems;
+  stageState._forwardMap = stage.forwardMap;
+}
+
+function updateNodeStylesInv(leftItems, rightItems) {
+  leftItems.forEach((_, i) => {
+    const el = document.getElementById(`from-${i}`);
+    if (!el) return;
+    el.className = 'node';
+    if (stageState.selectedFrom && stageState.selectedFrom.idx === i) el.classList.add('selected');
+    else if (stageState.connections.find(c => c.fromIdx === i)) el.classList.add('connected-from');
+  });
+  rightItems.forEach((_, i) => {
+    const el = document.getElementById(`to-${i}`);
+    if (!el) return;
+    el.className = 'node target';
+    if (stageState.connections.find(c => c.toIdx === i)) el.classList.add('connected-to');
+  });
+}
+
+// ─── CANVAS CONSTANT ──────────────────────────────────────────────
+function renderCanvasConstant(container, stage) {
+  stageState.points = [];
+  stageState.done = false;
+
+  const canvas = document.createElement('canvas');
+  canvas.id = 'function-canvas';
+  canvas.width = 500; canvas.height = 280;
+  container.appendChild(canvas);
+
+  const hint = document.createElement('div');
+  hint.style.cssText = 'text-align:center;font-size:13px;color:var(--text-secondary);margin-top:10px;';
+  hint.textContent = 'Clique em dois pontos com a mesma altura (Y) na grade.';
+  container.appendChild(hint);
+
+  drawGrid(canvas);
+
+  canvas.addEventListener('click', (e) => {
+    if (stageState.done) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    stageState.points.push({x, y});
+    drawGrid(canvas);
+    stageState.points.forEach(p => drawDot(canvas, p.x, p.y));
+    if (stageState.points.length === 2) {
+      const [p1, p2] = stageState.points;
+      const ctx = canvas.getContext('2d');
+      ctx.beginPath();
+      ctx.moveTo(0, (p1.y+p2.y)/2);
+      ctx.lineTo(canvas.width, (p1.y+p2.y)/2);
+      ctx.strokeStyle = '#6C63FF';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8,4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      stageState.done = true;
+    }
+    if (stageState.points.length > 2) {
+      stageState.points = [{ x, y }];
+      drawGrid(canvas);
+      drawDot(canvas, x, y);
+    }
+  });
+}
+
+function drawGrid(canvas) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = 'rgba(248,246,255,0.9)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  const step = 40;
+  ctx.strokeStyle = 'rgba(108,99,255,0.12)';
+  ctx.lineWidth = 1;
+  for (let x=0;x<=canvas.width;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
+  for (let y=0;y<=canvas.height;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
+  // Axes
+  ctx.strokeStyle = 'rgba(108,99,255,0.5)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(canvas.width/2,0); ctx.lineTo(canvas.width/2,canvas.height); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,canvas.height/2); ctx.lineTo(canvas.width,canvas.height/2); ctx.stroke();
+  ctx.fillStyle = 'rgba(108,99,255,0.6)';
+  ctx.font = '13px -apple-system, sans-serif';
+  ctx.fillText('x', canvas.width-14, canvas.height/2-8);
+  ctx.fillText('y', canvas.width/2+8, 16);
+}
+
+function drawDot(canvas, x, y) {
+  const ctx = canvas.getContext('2d');
+  ctx.beginPath();
+  ctx.arc(x, y, 7, 0, Math.PI*2);
+  ctx.fillStyle = '#6C63FF';
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+}
+
+// ─── MULTI CHOICE GRAPHS ──────────────────────────────────────────
+function renderMultichoice(container, stage, buildFn) {
+  stageState.selected = null;
+  const grid = document.createElement('div');
+  grid.className = 'choices-grid';
+  container.appendChild(grid);
+
+  const graphs = buildFn();
+  graphs.forEach((g, i) => {
+    const card = document.createElement('div');
+    card.className = 'choice-card';
+    const cv = document.createElement('canvas');
+    cv.width = 200; cv.height = 160;
+    g.draw(cv);
+    const lbl = document.createElement('div');
+    lbl.className = 'choice-label';
+    lbl.textContent = g.label;
+    card.appendChild(cv);
+    card.appendChild(lbl);
+    card.addEventListener('click', () => {
+      stageState.selected = i;
+      grid.querySelectorAll('.choice-card').forEach(c => c.classList.remove('selected-choice'));
+      card.style.borderColor = '#6C63FF';
+      card.style.background = 'rgba(108,99,255,0.1)';
+    });
+    grid.appendChild(card);
+  });
+  stageState._correctIndex = stage.correctIndex;
+  stageState._graphCards = Array.from(grid.querySelectorAll('.choice-card'));
+  stageState._graphGrid = grid;
+}
+
+function mcCheck() {
+  const grid = stageState._graphGrid;
+  const cards = Array.from(grid.querySelectorAll('.choice-card'));
+  cards.forEach((c,i) => {
+    c.style.borderColor = ''; c.style.background = '';
+    if (i === stageState._correctIndex) c.classList.add('correct');
+  });
+  if (stageState.selected === stageState._correctIndex) {
+    showFeedback('⭐ Muito bem! Resposta correta!','success'); celebrate(); enableNext();
+  } else {
+    cards[stageState.selected]?.classList.add('wrong');
+    showFeedback('✗ Tente novamente — observe a inclinação e simetria.','error');
+  }
+}
+
+function buildAfimGraphs() {
+  return [
+    { label: 'f(x) = 2x + 1', draw: cv => plotLine(cv, 2, 1, '#22c55e') },
+    { label: 'f(x) = -x + 2', draw: cv => plotLine(cv, -1, 2, '#ef4444') },
+    { label: 'f(x) = x²', draw: cv => plotCurve(cv, x=>x*x, '#f59e0b') },
+    { label: 'f(x) = 3', draw: cv => plotLine(cv, 0, 0, '#6C63FF') },
+  ];
+}
+function buildParGraphs() {
+  return [
+    { label: 'f(x) = x³', draw: cv => plotCurve(cv, x=>x*x*x, '#ef4444') },
+    { label: 'f(x) = x²', draw: cv => plotCurve(cv, x=>x*x, '#22c55e') },
+    { label: 'f(x) = 2x + 1', draw: cv => plotLine(cv, 2, 1, '#f59e0b') },
+    { label: 'f(x) = x + |x|', draw: cv => plotCurve(cv, x=>x+Math.abs(x), '#6C63FF') },
+  ];
+}
+function buildImparGraphs() {
+  return [
+    { label: 'f(x) = x²', draw: cv => plotCurve(cv, x=>x*x, '#ef4444') },
+    { label: 'f(x) = |x|', draw: cv => plotCurve(cv, x=>Math.abs(x), '#f59e0b') },
+    { label: 'f(x) = x³', draw: cv => plotCurve(cv, x=>x*x*x, '#22c55e') },
+    { label: 'f(x) = 2x + 1', draw: cv => plotLine(cv, 2, 1, '#6C63FF') },
+  ];
+}
+
+function plotLine(canvas, a, b, color) {
+  drawMiniGrid(canvas);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const cx = w/2, cy = h/2, scale = 28;
+  ctx.beginPath();
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+  for (let px=0; px<w; px++) {
+    const x = (px-cx)/scale;
+    const y = a*x + b;
+    const py = cy - y*scale;
+    if (px===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+}
+
+function plotCurve(canvas, fn, color) {
+  drawMiniGrid(canvas);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const cx = w/2, cy = h/2, scale = 28;
+  ctx.beginPath();
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+  let first = true;
+  for (let px=0; px<w; px++) {
+    const x = (px-cx)/scale;
+    const y = fn(x);
+    const py = cy - y*scale;
+    if (py < -50 || py > h+50) { first=true; continue; }
+    if (first) { ctx.moveTo(px,py); first=false; } else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+}
+
+function drawMiniGrid(canvas) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = 'rgba(248,246,255,0.85)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle = 'rgba(108,99,255,0.1)'; ctx.lineWidth = 1;
+  for(let x=0;x<canvas.width;x+=20){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
+  for(let y=0;y<canvas.height;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
+  ctx.strokeStyle='rgba(108,99,255,0.4)'; ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(canvas.width/2,0);ctx.lineTo(canvas.width/2,canvas.height);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,canvas.height/2);ctx.lineTo(canvas.width,canvas.height/2);ctx.stroke();
+}
+
+// ─── CHECK ANSWER ─────────────────────────────────────────────────
+function checkAnswer() {
+  const stage = stages[currentStage];
+
+  if (stage.type === 'diagram') {
+    const conns = stageState.connections;
+    if (conns.length < stage.domainItems.length) {
+      showFeedback(`✗ Conecte todos os ${stage.domainItems.length} elementos do domínio!`, 'error'); return;
+    }
+    if (stage.validRule === 'injective') {
+      const targets = conns.map(c=>c.toIdx);
+      const unique = new Set(targets);
+      if (unique.size === targets.length) {
+        showFeedback('⭐ Muito bem! Função injetiva correta!','success'); celebrate(); enableNext();
+      } else { showFeedback('✗ Dois elementos estão indo para o mesmo destino!','error'); }
+    } else if (stage.validRule === 'surjective') {
+      const targets = new Set(conns.map(c=>c.toIdx));
+      if (targets.size === stage.codomainItems.length) {
+        showFeedback('⭐ Muito bem! Todos os destinos foram cobertos!','success'); celebrate(); enableNext();
+      } else { showFeedback('✗ Ainda há elementos no contradomínio sem seta!','error'); }
+    } else if (stage.validRule === 'bijective') {
+      const targets = conns.map(c=>c.toIdx);
+      const unique = new Set(targets);
+      if (unique.size === targets.length && unique.size === stage.codomainItems.length && conns.length === stage.domainItems.length) {
+        showFeedback('⭐ Perfeito! Bijeção completa!','success'); celebrate(); enableNext();
+      } else { showFeedback('✗ Match imperfeito — revise as conexões!','error'); }
+    }
+  }
+
+  else if (stage.type === 'canvas-constant') {
+    if (!stageState.done || stageState.points.length < 2) {
+      showFeedback('✗ Clique em dois pontos na tela primeiro!','error'); return;
+    }
+    const [p1, p2] = stageState.points;
+    const dy = Math.abs(p1.y - p2.y);
+    if (dy < 20) {
+      showFeedback('⭐ Muito bem! Reta horizontal traçada — função constante!','success'); celebrate(); enableNext();
+    } else { showFeedback('✗ Os pontos precisam ter a mesma coordenada Y (mesma altura)!','error'); }
+  }
+
+  else if (['multichoice-afim','multichoice-par','multichoice-impar'].includes(stage.type)) {
+    if (stageState.selected === null) { showFeedback('✗ Selecione um gráfico primeiro!','error'); return; }
+    mcCheck();
+  }
+
+  else if (stage.type === 'diagram-inverse') {
+    const conns = stageState.connections;
+    const fwd = stageState._forwardMap; // [[2,10],[3,15],[4,20]]
+    if (conns.length < fwd.length) { showFeedback(`✗ Conecte todos os ${fwd.length} elementos!`,'error'); return; }
+    // left = codomain values (10,15,20), right = domain values (2,3,4)
+    // correct: 10→2 (fromIdx 0 toIdx 0), 15→3 (fromIdx1 toIdx1), 20→4 (fromIdx2 toIdx2)
+    const correct = conns.every(c => c.toIdx === c.fromIdx);
+    if (correct) {
+      showFeedback('⭐ Excelente! Função inversa conectada corretamente!','success'); bigCelebrate(); enableNext();
+    } else { showFeedback('✗ Revise — a inversa deve desfazer exatamente o caminho original!','error'); }
+  }
+}
+
+// ─── NEXT STAGE ───────────────────────────────────────────────────
+function nextStage() {
+  clearConnectorOverlay();
+  currentStage++;
+  render();
+}
+
+// ─── VICTORY ──────────────────────────────────────────────────────
+function renderVictory(app) {
+  bigCelebrate();
+  setTimeout(bigCelebrate, 1200);
+
+  // Progress header
+  const header = document.createElement('div');
+  header.className = 'stage-badge';
+  header.innerHTML = `
+    <div class="stage-pill">Concluído 🏆</div>
+    <div class="stage-progress"><div class="stage-progress-fill" style="width:100%"></div></div>
+  `;
+  app.appendChild(header);
+
+  const card = document.createElement('div');
+  card.className = 'victory-card stage-enter';
+  card.innerHTML = `
+    <div class="victory-ribbon">✦ Vale Prêmio ✦</div>
+    <span class="victory-emoji">🎁</span>
+    <div class="victory-title">VALE PRÊMIO</div>
+    <div class="victory-stars">⭐⭐⭐⭐⭐</div>
+    <div class="victory-msg">
+      Parabéns! Você concluiu todos os níveis de<br>
+      <strong style="color:#c4b5fd">Funções Matemáticas</strong> com sucesso.<br>
+      Todos os 8 estágios foram completados!
+    </div>
+    <div class="victory-seal">
+      <div class="seal-dot"></div>
+      <div class="seal-text">✓ ATIVIDADE VALIDADA</div>
+    </div>
+    <hr class="victory-divider">
+    <div class="victory-instruction">
+      📢 Procure a equipe organizadora agora e mostre<br>
+      esta tela para retirar o seu prêmio.
+    </div>
+  `;
+  app.appendChild(card);
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
